@@ -1,62 +1,55 @@
 // ==========================
-// Contact Form Backend
+// Contact Form Backend (SendGrid Version)
 // ==========================
 const express = require("express");
-const nodemailer = require("nodemailer");
 const cors = require("cors");
+const sgMail = require("@sendgrid/mail");
 require("dotenv").config();
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
+// Set SendGrid API Key
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
 // ==========================
 // TEST ROUTE
 // ==========================
 app.get("/", (req, res) => {
-  res.send("✅ Backend is running on localhost:5000!");
+  res.send("✅ Backend is running with SendGrid!");
 });
 
 // ==========================
 // CONTACT ROUTE
 // ==========================
 app.post("/contact", async (req, res) => {
-    console.log("POST /contact hit");
-    console.log(req.body);
+  console.log("Received contact form submission:");
   const { name, email, message } = req.body;
 
   if (!name || !email || !message) {
     return res.status(400).json({ message: "All fields are required" });
   }
 
-  try {
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
-    const mailOptions = {
-      from: `"Portfolio Contact" <${process.env.EMAIL_USER}>`,
-      to: process.env.EMAIL_USER,
-      subject: `New Contact Form Message from ${name}`,
-      text: `
+  const msg = {
+    to: process.env.EMAIL_TO,      // receiver email (your email)
+    from: process.env.EMAIL_FROM,  // verified sender email from SendGrid
+    subject: `New Message from ${name}`,
+    text: `
 You received a new contact form submission:
 
 Name: ${name}
 Email: ${email}
 Message: ${message}
-      `,
-    };
+`,
+  };
 
-    await transporter.sendMail(mailOptions);
-
+  try {
+    await sgMail.send(msg);
     res.json({ message: "Your message has been sent successfully!" });
   } catch (error) {
-    console.error("Error sending email:", error);
-    res.status(500).json({ message: "Failed to send message. Please try again." });
+    console.error("SendGrid Error:", error);
+    res.status(500).json({ message: "Failed to send message." });
   }
 });
 
