@@ -44,13 +44,11 @@ Message: ${message}
 `,
   };
 
-  try {
-    await sgMail.send(msg);
-    res.json({ message: "Your message has been sent successfully!" });
-  } catch (error) {
-    console.error("SendGrid Error:", error);
-    res.status(500).json({ message: "Failed to send message." });
-  }
+  // 🔥 Send response immediately (no waiting)
+  res.json({ message: "Your message is being processed..." });
+
+  // 📨 Send email in the background
+  sgMail.send(msg).catch((err) => console.error("SendGrid Error:", err));
 });
 
 // ==========================
